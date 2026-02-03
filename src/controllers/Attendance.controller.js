@@ -33,13 +33,56 @@ exports.markAttendance = async (req, res, next) => {
   }
 };
 
+// exports.getAttendanceByEmployee = async (req, res, next) => {
+//   try {
+//     const records = await Attendance.find({
+//       employeeId: req.params.employeeId,
+//     }).sort({ date: -1 });
+
+//     res.json(records);
+//   } catch (err) {
+//     next(err);
+//   }
+// };
+
 exports.getAttendanceByEmployee = async (req, res, next) => {
   try {
-    const records = await Attendance.find({
-      employeeId: req.params.employeeId,
-    }).sort({ date: -1 });
+    const { employeeId } = req.params;
+    const { from, to } = req.query;
 
+    const query = { employeeId };
+
+    // 🔥 Date range filter
+    if (from && to) {
+      query.date = { $gte: from, $lte: to };
+    }
+
+    const records = await Attendance.find(query).sort({ date: -1 });
     res.json(records);
+  } catch (err) {
+    next(err);
+  }
+};
+
+
+exports.getAttendanceSummary = async (req, res, next) => {
+  try {
+    const { employeeId } = req.params;
+    const { from, to } = req.query;
+
+    const query = {
+      employeeId,
+      status: "Present",
+    };
+
+    // 🔥 Same date range logic
+    if (from && to) {
+      query.date = { $gte: from, $lte: to };
+    }
+
+    const totalPresent = await Attendance.countDocuments(query);
+
+    res.json({ totalPresent });
   } catch (err) {
     next(err);
   }
